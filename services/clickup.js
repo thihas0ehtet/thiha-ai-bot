@@ -1,4 +1,4 @@
-import axios from "axios";
+const axios = require("axios");
 
 export async function createClickUpTask(name, assigneeId) {
     const listId = "901816397206";

@@ -1,7 +1,7 @@
-import axios from "axios";
-import { createGithubIssue } from "./github.js";
-import { createClickUpTask } from "./clickup.js";
-import { notifyDiscord } from "./discord.js";
+const axios = require("axios");
+const { createGithubIssue } = require("./github");
+const { createClickUpTask } = require("./clickup");
+const { notifyDiscord } = require("./discord");
 
 export async function handleCommand(command) {
     const apiKey = process.env.GEMINI_API_KEY;
