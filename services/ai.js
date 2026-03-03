@@ -1,20 +1,12 @@
-const { createGithubIssue, createRepository } = require("./github.js");
-const { createClickUpTask } = require("./clickup.js");
-const { notifyDiscord } = require("./discord.js");
+const { handleGithubIssue, handleCreateRepo } = require("./github.js");
 
-/**
- * Process user commands using Gemini AI to identify action types
- * Supports: GitHub issues, GitHub repos, regular messages
- * @param {string} command - User command text
- * @returns {Promise<string>} Response or result of action
- */
+// Process user commands using Gemini AI to identify action types
 async function handleCommand(command) {
     const apiKey = process.env.GEMINI_API_KEY;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     try {
         // Send command to Gemini with system prompt to identify action type
-
         const systemPrompt = `You are an AI assistant that helps create GitHub issues, GitHub repositories, ClickUp tasks, and Discord notifications.
 
 When the user wants to create a GitHub issue, respond with ONLY a valid JSON object:
@@ -95,61 +87,6 @@ IMPORTANT: Always respond with ONLY valid JSON, nothing else.`;
         return responseText;
     } catch (error) {
         throw error;
-    }
-}
-
-/**
- * Handle GitHub issue creation workflow
- * Creates issue, syncs with ClickUp, notifies Discord
- * @param {object} action - Action object with title and body
- * @returns {Promise<string>} Success message or error
- */
-async function handleGithubIssue(action) {
-    try {
-        const { title, body } = action;
-
-        if (!title) {
-            return "❌ Issue title is required";
-        }
-
-        // Create GitHub issue
-        const issue = await createGithubIssue(title, body || "");
-        const issueUrl = issue.html_url;
-
-        // Create ClickUp task synced with GitHub issue
-        const taskName = `GitHub Issue: ${title}`;
-        await createClickUpTask(taskName, null);
-
-        // Notify Discord channel about new issue
-        const discordMessage = `🚀 New GitHub Issue Created!\n📌 **${title}**\n🔗 ${issueUrl}\n✅ Task added to ClickUp`;
-        await notifyDiscord(discordMessage);
-
-/**
- * Handle GitHub repository creation workflow
- * Creates repo and notifies Discord
- * @param {object} action - Action object with name, description, and private flag
- * @returns {Promise<string>} Success message or error
- */
-async function handleCreateRepo(action) {
-    try {
-        const { name, description, private: isPrivate } = action;
-
-        if (!name) {
-            return "❌ Repository name is required";
-        }
-
-        // Create GitHub repository
-        const repo = await createRepository(name, description || "", isPrivate || false);
-        const repoUrl = repo.html_url;
-
-        // Notify Discord channel about new repository
-        const repoType = isPrivate ? "Private" : "Public";
-        const discordMessage = `🎉 New ${repoType} Repository Created!\n📦 **${name}**\n🔗 ${repoUrl}\n📝 ${description || "No description"}`;
-        await notifyDiscord(discordMessage);
-
-        return `✅ Success! Created ${repoType.toLowerCase()} repository:\n${repoUrl}`;
-    } catch (error) {
-        return `❌ Error: ${error.message}`;
     }
 }
 

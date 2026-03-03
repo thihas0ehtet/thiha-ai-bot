@@ -1,9 +1,4 @@
-/**
- * Create a task in ClickUp
- * @param {string} name - Task name/title
- * @param {string|null} assigneeId - Optional assignee ID
- * @returns {Promise<object>} ClickUp task object with ID
- */
+// Create a task in ClickUp
 async function createClickUpTask(name, assigneeId) {
     const listId = "901816397206";
 

@@ -1,8 +1,4 @@
-/**
- * Send message notification to Discord webhook
- * @param {string} message - Message content to send
- * @returns {Promise<void>}
- */
+// Send message notification to Discord webhook
 async function notifyDiscord(message) {
     try {
         const response = await fetch(process.env.DISCORD_WEBHOOK_URL, {

@@ -1,9 +1,4 @@
-/**
- * Create a GitHub issue in the repository
- * @param {string} title - Issue title
- * @param {string} body - Issue description
- * @returns {Promise<object>} GitHub issue object with URL
- */
+// Create a GitHub issue in the repository
 async function createGithubIssue(title, body) {
     try {
         const response = await fetch(
@@ -32,13 +27,7 @@ async function createGithubIssue(title, body) {
     }
 }
 
-/**
- * Create a new GitHub repository
- * @param {string} name - Repository name
- * @param {string} description - Repository description
- * @param {boolean} isPrivate - Is repository private (default: false)
- * @returns {Promise<object>} GitHub repository object with URL
- */
+// Create a new GitHub repository
 async function createRepository(name, description, isPrivate = false) {
     try {
         const response = await fetch(
@@ -72,4 +61,60 @@ async function createRepository(name, description, isPrivate = false) {
     }
 }
 
-module.exports = { createGithubIssue, createRepository };
+// Handle GitHub issue creation workflow: create issue, sync with ClickUp, notify Discord
+async function handleGithubIssue(action) {
+    const { createClickUpTask } = require("./clickup.js");
+    const { notifyDiscord } = require("./discord.js");
+
+    try {
+        const { title, body } = action;
+
+        if (!title) {
+            return "❌ Issue title is required";
+        }
+
+        // Create GitHub issue
+        const issue = await createGithubIssue(title, body || "");
+        const issueUrl = issue.html_url;
+
+        // Create ClickUp task synced with GitHub issue
+        const taskName = `GitHub Issue: ${title}`;
+        await createClickUpTask(taskName, null);
+
+        // Notify Discord channel about new issue
+        const discordMessage = `🚀 New GitHub Issue Created!\n📌 **${title}**\n🔗 ${issueUrl}\n✅ Task added to ClickUp`;
+        await notifyDiscord(discordMessage);
+
+        return `✅ Success! Created GitHub issue and synced with ClickUp and Discord:\n${issueUrl}`;
+    } catch (error) {
+        return `❌ Error: ${error.message}`;
+    }
+}
+
+// Handle GitHub repository creation workflow: create repo and notify Discord
+async function handleCreateRepo(action) {
+    const { notifyDiscord } = require("./discord.js");
+
+    try {
+        const { name, description, private: isPrivate } = action;
+
+        if (!name) {
+            return "❌ Repository name is required";
+        }
+
+        // Create GitHub repository
+        const repo = await createRepository(name, description || "", isPrivate || false);
+        const repoUrl = repo.html_url;
+
+        // Notify Discord channel about new repository
+        const repoType = isPrivate ? "Private" : "Public";
+        const discordMessage = `🎉 New ${repoType} Repository Created!\n📦 **${name}**\n🔗 ${repoUrl}\n📝 ${description || "No description"}`;
+        await notifyDiscord(discordMessage);
+
+        return `✅ Success! Created ${repoType.toLowerCase()} repository:\n${repoUrl}`;
+    } catch (error) {
+        return `❌ Error: ${error.message}`;
+    }
+}
+
+module.exports = { createGithubIssue, createRepository, handleGithubIssue, handleCreateRepo };
