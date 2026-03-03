@@ -1,5 +1,5 @@
 const { Telegraf } = require("telegraf");
-const { handleCommand } = require("../services/ai");
+// const { handleCommand } = require("../services/ai");
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
@@ -10,8 +10,8 @@ bot.command("ai", async (ctx) => {
     if (!command) return ctx.reply("Please provide a command!");
 
     try {
-        const result = await handleCommand(command);
-        ctx.reply(result);
+        // const result = await handleCommand(command);
+        ctx.reply("AI command received: " + command);
     } catch (err) {
         console.error(err);
         ctx.reply("❌ Error: " + err.message);
