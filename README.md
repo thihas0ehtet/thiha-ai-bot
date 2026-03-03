@@ -4,89 +4,109 @@ An intelligent AI-powered bot that integrates with Telegram, GitHub, ClickUp, an
 
 ## Features
 
-- 🤖 **AI-Powered Commands** - Using Gemini AI to process and execute commands
-- 📱 **Telegram Integration** - Interact with the bot via Telegram
-- 🐙 **GitHub Integration** - Automatically create GitHub issues
-- ✅ **ClickUp Integration** - Create and manage tasks in ClickUp
-- 🎵 **Discord Integration** - Send notifications to Discord channels
-- 🔄 **Service Sync** - Automatically sync tasks across multiple platforms
+- 🤖 **AI-Powered Commands** — Gemini AI parses natural language and routes to the right service
+- 📱 **Telegram Integration** — Interact with the bot via Telegram
+- 🐙 **GitHub Integration** — Create issues and repositories
+- ✅ **ClickUp Full Project Management** — Sprints, tasks, assignees, deadlines, and more
+- 🎵 **Discord Integration** — Send notifications to Discord channels
+- 🔄 **Cross-Platform Sync** — Automatically sync tasks across GitHub, ClickUp, and Discord
+
+## ClickUp Commands
+
+Talk to the bot in **natural language** via Telegram. No hardcoded IDs — just use space/project/sprint names:
+
+| Command Example | What It Does |
+|---|---|
+| `list all projects in MySpace` | Lists all folders/projects in a space |
+| `tell me about MyProject` | Full project overview: tasks, sprints, progress |
+| `what's the current sprint in MyProject?` | Active sprint info with task list |
+| `remaining tasks in current sprint of MyProject` | Unfinished tasks with assignees |
+| `who is assigned in current sprint of MyProject?` | Task assignments grouped by person |
+| `when is the sprint deadline for MyProject?` | Sprint start/end dates + days remaining |
+| `what's the next sprint of MyProject?` | Next upcoming sprint details |
+| `create task "Create user API" in Sprint 1 of MyProject` | Creates a task in a specific sprint |
+| `mark task abc123 as complete` | Updates a task status (needs task ID) |
+| `delete task abc123` | Deletes a task (needs task ID) |
+
+> **Note:** Replace `MySpace`, `MyProject`, and `Sprint 1` with your actual ClickUp space, folder, and list names.
+
+## ClickUp Hierarchy
+
+The bot maps to ClickUp's structure:
+
+```
+Workspace (Team)
+ └── Space (e.g. "Engineering")
+      └── Folder = Project (e.g. "MyProject")
+           └── List = Sprint (e.g. "Sprint 1", "Sprint 2")
+                └── Tasks
+```
 
 ## Prerequisites
 
-Make sure you have the following installed:
 - **Node.js** (v16 or higher)
-- **npm** or **yarn** package manager
+- **npm** package manager
 
 ## Environment Setup
 
-### Configure Environment Variables
+Edit the `.env` file with your API credentials:
 
-Edit the `.env` file in the project root and add your API credentials for each service:
-
-#### **Telegram Bot Token**
+#### Telegram Bot Token
 1. Create a bot with [@BotFather](https://t.me/botfather) on Telegram
-2. Copy the bot token and add it to:
+2. Copy the bot token:
    ```
    TELEGRAM_BOT_TOKEN=your_token_here
    ```
 
-#### **Gemini API Key**
-1. Go to [Google AI Studio](https://aistudio.google.com/)
-2. Create a new API key
-3. Add it to:
+#### Authorized Users
+```
+AUTHORIZED_USER_IDS=your_telegram_user_id
+```
+
+#### Gemini API Key
+1. Go to [Google AI Studio](https://aistudio.google.com/) and create an API key:
    ```
    GEMINI_API_KEY=your_api_key_here
    ```
 
-#### **GitHub Token**
-1. Go to GitHub → Settings → Developer settings → Personal access tokens
-2. Generate a new token with `repo` and `issues` permissions
-3. Add it to:
+#### GitHub Token
+1. GitHub → Settings → Developer settings → Personal access tokens
+2. Generate token with `repo` and `issues` permissions:
    ```
    GITHUB_TOKEN=your_token_here
    ```
 
-#### **ClickUp Token**
-1. Go to [ClickUp Settings](https://app.clickup.com/settings/integrations)
-2. Generate an API token in the Integrations tab
-3. Find your List ID by opening a list and copying the ID from the URL
-4. CLICKUP_TOKEN=your_token_here
+#### ClickUp Token
+1. Go to [ClickUp Settings](https://app.clickup.com/settings/integrations) → API tab
+2. Generate a personal token:
+   ```
+   CLICKUP_TOKEN=your_token_here
+   CLICKUP_TEAM_ID=your_team_id_here  # optional, speeds up lookups
    ```
 
-#### **Discord Webhook URL**
-1. Create a Discord webhook in your server (Server Settings → Integrations → Webhooks)
-2. Copy the webhook URL and add it to:
-   Add it to:
+#### Discord Webhook URL
+1. Create a webhook in your Discord server (Server Settings → Integrations → Webhooks):
    ```
-   CLICKUP_TOKEN=your_token_hereptional)
-```your_webhook_url_here
-   ### 1. Install Dependencies
+   DISCORD_WEBHOOK_URL=your_webhook_url_here
+   ```
+
+## Installation
 
 ```bash
 npm install
 ```
 
-### 2. Verify Setup
-
-Ensure all required environment variables are set:
-
-```bash
-# Check if .env file exists
-ls -la .env
-
-# Test by running your application
-node api/telegram.js
-```
-
 ## Usage
 
-### Running the Bot
+### Deploy to Vercel
+
+The bot runs as a Vercel serverless function:
 
 ```bash
-npm start
+vercel deploy
 ```
 
-Or directly run:
+### Running Locally
 
 ```bash
 node api/telegram.js
@@ -94,70 +114,59 @@ node api/telegram.js
 
 ### Interacting with the Bot
 
-Send a command to your Telegram bot:
+Send messages to your Telegram bot in natural language:
 
 ```
-/ai Create a GitHub issue titled "Fix login bug"
-```
+Create a GitHub issue titled "Fix login bug"
+→ Creates GitHub issue + ClickUp task + Discord notification
 
-The bot will:
-1. ✅ Process your command with Gemini AI
-2. 🐙 Create a GitHub issue
-3. ✅ Add a task to ClickUp
-4. 🎵 Notify Discord about the new task
+Tell me about MyProject
+→ Shows project summary with all sprints and task counts
+
+What's the current sprint in MyProject?
+→ Shows active sprint with tasks, assignees, and progress
+```
 
 ## Project Structure
 
 ```
 thiha-ai-bot/
 ├── api/
-│   └── telegram.js          # Telegram bot handler
+│   └── telegram.js          # Telegram bot handler (Vercel serverless)
 ├── services/
-│   ├── ai.js               # AI command processor
-│   ├── github.js           # GitHub integration
-│   ├── clickup.js          # ClickUp integration
-│   └── discord.js          # Discord notifications
+│   ├── ai.js               # AI command processor (Gemini + action routing)
+│   ├── clickup.js          # ClickUp API v2 integration (full project mgmt)
+│   ├── github.js           # GitHub integration (issues + repos)
+│   └── discord.js          # Discord webhook notifications
+├── vercel.json             # Vercel config
 ├── package.json
 ├── .env.example            # Environment variables template
-├── .env                    # Local environment variables (DO NOT COMMIT)
-└── README.md              # This file
+└── README.md
 ```
 
-## Important Security Notes
+## Security Notes
 
-- ⚠️ **Never commit the `.env` file** to version control
-- The `.gitignore` should include `.env`
-- Keep all API tokens and secrets confidential
-- Use separate tokens for different environments (development, production)
+- ⚠️ **Never commit `.env`** — it's in `.gitignore`
+- Keep all API tokens confidential
+- Use separate tokens for dev/production environments
 
 ## Troubleshooting
 
-### "TELEGRAM_BOT_TOKEN is not defined"
-- Make sure `.env` file exists in the project root
-- Verify the variable name matches exactly
-- Reload your application after updating `.env`
-
-### "Invalid API Key" errors
-- Double-check the API key is correct
-- Ensure the token hasn't expired
-- Verify the token has necessary permissions
-
-### "Webhook request failed"
-- Verify the Discord webhook URL is active
-- Check the webhook hasn't been deleted from Discord settings
-- Ensure the webhook has permission to send messages
+| Error | Fix |
+|---|---|
+| `TELEGRAM_BOT_TOKEN is not defined` | Check `.env` exists and variable name matches |
+| `Invalid API Key` | Verify the key is correct and hasn't expired |
+| `Space "X" not found` | Check the space name matches exactly (case-insensitive) |
+| `Folder/Project "X" not found` | Verify the folder name in ClickUp |
+| `ClickUp API 401` | Regenerate your ClickUp API token |
+| `Webhook request failed` | Check Discord webhook URL is still active |
 
 ## Dependencies
 
-- **axios** - HTTP client for API requests
-- **dotenv** - Environment variable loader
-- **express** - Web framework
-- **telegraf** - Telegram bot framework
+- **dotenv** — Environment variable loader
+- **express** — Web framework
+- **telegraf** — Telegram bot framework
 
 ## License
 
 ISC
-
-## Support
-
-For issues or questions, please check the documentation for each integrated service or create an issue in the repository.
