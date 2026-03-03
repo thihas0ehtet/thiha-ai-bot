@@ -65,10 +65,19 @@ IMPORTANT: Always respond with ONLY valid JSON, nothing else.`;
         // Step 3: Parse the structured action from AI response
         let action = {};
         try {
-            action = JSON.parse(responseText);
+            // Extract JSON from markdown code blocks if present
+            let jsonStr = responseText;
+            const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (jsonMatch) {
+                jsonStr = jsonMatch[1].trim();
+                console.log("📋 Extracted JSON from markdown:", jsonStr.slice(0, 100));
+            }
+
+            action = JSON.parse(jsonStr);
             console.log("✅ Parsed action:", action.type);
         } catch (e) {
             console.error("⚠️ Could not parse JSON from AI response, treating as plain message");
+            console.error("📍 Parse error:", e.message);
             return responseText;
         }
 
