@@ -21,16 +21,18 @@ bot.command('model', async (ctx) => {
 
     const text = ctx.message.text.split(' ');
     if (text.length === 1) {
-        return ctx.reply(`🤖 Current model: **${getModel()}**\n\nTo switch, use:\n- \`/model gemini\`\n- \`/model openai\``, { parse_mode: 'Markdown' });
+        return ctx.reply(`🤖 Current model: **${getModel()}**\n\nTo switch, use:\n- \`/model gemini\`\n- \`/model openai\`\n- \`/model openrouter\``, { parse_mode: 'Markdown' });
     }
 
     const newModel = text[1].toLowerCase();
-    if (['gemini', 'openai'].includes(newModel)) {
+    if (['gemini', 'openai', 'openrouter'].includes(newModel)) {
         setModel(newModel);
-        const details = newModel === 'openai' ? ` (${process.env.OPENAI_MODEL || 'gpt-3.5-turbo'})` : '';
+        let details = '';
+        if (newModel === 'openai') details = ` (${process.env.OPENAI_MODEL || 'gpt-3.5-turbo'})`;
+        if (newModel === 'openrouter') details = ` (${process.env.OPENROUTER_MODEL || 'openrouter/free'})`;
         ctx.reply(`✅ Switched to **${newModel}**${details}`, { parse_mode: 'Markdown' });
     } else {
-        ctx.reply("❌ Invalid model. Use `gemini` or `openai`.");
+        ctx.reply("❌ Invalid model. Use `gemini`, `openai`, or `openrouter`.");
     }
 });
 

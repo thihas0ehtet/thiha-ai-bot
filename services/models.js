@@ -9,7 +9,7 @@
 async function callGemini(systemPrompt, userMessage) {
     const apiKey = process.env.GEMINI_API_KEY;
     const baseUrl = process.env.GEMINI_API_URL;
-    
+
     if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
     if (!baseUrl) throw new Error("GEMINI_API_URL is not set");
 
@@ -43,7 +43,7 @@ async function callGemini(systemPrompt, userMessage) {
 async function callOpenAI(systemPrompt, userMessage) {
     const apiKey = process.env.OPENAI_API_KEY;
     const model = process.env.OPENAI_MODEL || "gpt-3.5-turbo";
-    
+
     if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
 
     const url = "https://api.openai.com/v1/chat/completions";
@@ -78,16 +78,57 @@ async function callOpenAI(systemPrompt, userMessage) {
 }
 
 /**
+ * Call OpenRouter API
+ */
+async function callOpenRouter(systemPrompt, userMessage) {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    const model = process.env.OPENROUTER_MODEL || "openrouter/free";
+
+    if (!apiKey) throw new Error("OPENROUTER_API_KEY is not set");
+
+    const url = "https://openrouter.ai/api/v1/chat/completions";
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model: model,
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userMessage }
+            ]
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+    if (!data.choices?.[0]?.message?.content) {
+        throw new Error("Invalid response structure from OpenRouter API");
+    }
+
+    return data.choices[0].message.content;
+}
+
+/**
  * Router for AI providers
  */
 async function callAI(provider, systemPrompt, userMessage) {
     const normalizedProvider = (provider || "gemini").toLowerCase();
-    
+
     switch (normalizedProvider) {
         case "gemini":
             return await callGemini(systemPrompt, userMessage);
         case "openai":
             return await callOpenAI(systemPrompt, userMessage);
+        case "openrouter":
+            return await callOpenRouter(systemPrompt, userMessage);
         default:
             throw new Error(`Unsupported AI provider: ${provider}`);
     }
