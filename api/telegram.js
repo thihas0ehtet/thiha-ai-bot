@@ -1,5 +1,5 @@
 const { Telegraf } = require("telegraf");
-const { handleCommand } = require("../services/ai");
+const { handleCommand } = require("../services/ai.js");
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
