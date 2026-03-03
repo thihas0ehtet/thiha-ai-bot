@@ -257,6 +257,4 @@ async function handleClickUpAction(action) {
         return `❌ ClickUp Error: ${error.message}`;
     }
 }
-
-
-
+module.exports = { handleCommand, setModel, getModel, clearMemory, clearCache };
