@@ -1,7 +1,8 @@
 const { handleGithubIssue, handleCreateRepo } = require("./github.js");
 const clickup = require("./clickup.js");
-const { callAI, parseAIResponse } = require("./models.js");
+const { callAI, parseAIResponse, clearCache } = require("./models.js");
 const { SYSTEM_PROMPT } = require("./constants.js");
+const { getUserMemory, updateUserMemory } = require("./firebase.js");
 
 // Current active model (default from env or gemini)
 let activeModel = process.env.AI_MODEL || "gemini";
@@ -40,29 +41,48 @@ function formatDate(isoStr) {
 // Process user commands using identified AI provider to identify action types
 async function handleCommand(userId, command) {
     try {
-        // Initialize history for user if not exists
+        // 1. Fetch Long-Term Memory
+        const longTermMemory = await getUserMemory(userId);
+        const memoryStr = Object.keys(longTermMemory).length > 0
+            ? `\n\n=== USER LONG-TERM MEMORY ===\n${JSON.stringify(longTermMemory, null, 2)}`
+            : "";
+
+        const enhancedSystemPrompt = SYSTEM_PROMPT + memoryStr;
+
+        // 2. Manage Session History
         if (!userMemory[userId]) {
             userMemory[userId] = [];
         }
 
-        // Add user message to history
         userMemory[userId].push({ role: "user", content: command });
 
-        // Keep history manageable (last 10 messages)
         if (userMemory[userId].length > 10) {
             userMemory[userId] = userMemory[userId].slice(-10);
         }
 
-        const responseText = await callAI(activeModel, SYSTEM_PROMPT, userMemory[userId]);
+        // 3. Call AI
+        const responseText = await callAI(activeModel, enhancedSystemPrompt, userMemory[userId]);
 
         // Add AI response to history
         userMemory[userId].push({ role: "assistant", content: responseText });
 
-        // Parse structured action from AI response
+        // 4. Parse and Execute Action
         const action = parseAIResponse(responseText);
 
         if (!action) {
             return responseText;
+        }
+
+        // Handle Long-Term Memory Updates
+        if (action.type === "update_memory") {
+            const success = await updateUserMemory(userId, action.key, action.value);
+            const msg = success
+                ? `(Memory Updated: ${action.key}) `
+                : `(Memory Update Failed) `;
+
+            // Re-call AI message handler or just return the text if it was a message + memory update
+            // Most AIs will just return the JSON. If it's update_memory, we might want to acknowledge it.
+            return (action.text || "I've updated my long-term memory with that information.") + " ✅";
         }
 
         // Route to the correct handler
@@ -240,4 +260,3 @@ async function handleClickUpAction(action) {
 
 
 
-module.exports = { handleCommand, setModel, getModel, clearMemory };

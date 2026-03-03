@@ -48,6 +48,12 @@ Update a task (need task_id):
 Delete a task (need task_id):
 { "type": "clickup_delete_task", "task_id": "taskid" }
 
+=== MEMORY ACTIONS ===
+
+Update user's long-term memory (skills, projects, etc.):
+{ "type": "update_memory", "key": "skills", "value": ["Flutter", "Firebase", "NestJS"] }
+{ "type": "update_memory", "key": "projects", "value": ["MyanOne", "AI Bot"] }
+
 === REGULAR MESSAGE ===
 
 For regular conversation or questions:
@@ -58,6 +64,8 @@ RULES:
 - If user says "project X" it refers to folder_name
 - If user says "sprint 1" or "list name" it refers to list_name
 - If user says "in space X" it refers to space_name
+- Use the provided USER LONG-TERM MEMORY to personalize responses.
+- If the user tells you something new about themselves (skills, products, interests), use the "update_memory" action.
 - Always respond with ONLY valid JSON`;
 
 module.exports = {

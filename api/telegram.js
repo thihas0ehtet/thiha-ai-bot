@@ -1,5 +1,5 @@
 const { Telegraf } = require("telegraf");
-const { handleCommand, setModel, getModel, clearMemory } = require("../services/ai.js");
+const { handleCommand, setModel, getModel, clearMemory, clearCache } = require("../services/ai.js");
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
@@ -41,6 +41,13 @@ bot.command('clear', async (ctx) => {
     if (!isAuthorized(ctx.from.id)) return;
     clearMemory(ctx.from.id);
     ctx.reply("🧹 Conversation history cleared!");
+});
+
+// Handle /clearcache command
+bot.command('clearcache', async (ctx) => {
+    if (!isAuthorized(ctx.from.id)) return;
+    clearCache();
+    ctx.reply("⚡ AI response cache cleared!");
 });
 
 // Handle all text messages

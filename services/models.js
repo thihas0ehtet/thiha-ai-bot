@@ -1,7 +1,21 @@
+const crypto = require('crypto');
+
 /**
  * AI Model Provider Service
  * Encapsulates API calls to different AI providers (Gemini, OpenAI, etc.)
  */
+
+// Simple in-memory cache
+const aiCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Generate a unique hash for the request
+ */
+function getCacheKey(provider, systemPrompt, history) {
+    const data = JSON.stringify({ provider, systemPrompt, history });
+    return crypto.createHash('md5').update(data).digest('hex');
+}
 
 /**
  * Call Gemini API with history
@@ -123,21 +137,41 @@ async function callOpenRouter(systemPrompt, history) {
 }
 
 /**
- * Router for AI providers
+ * Router for AI providers with Caching
  */
 async function callAI(provider, systemPrompt, history) {
     const normalizedProvider = (provider || "gemini").toLowerCase();
+    const cacheKey = getCacheKey(normalizedProvider, systemPrompt, history);
 
+    // Check Cache
+    const cached = aiCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+        console.log(`[Cache Hit] Using cached response for ${normalizedProvider}`);
+        return cached.response;
+    }
+
+    let responseText;
     switch (normalizedProvider) {
         case "gemini":
-            return await callGemini(systemPrompt, history);
+            responseText = await callGemini(systemPrompt, history);
+            break;
         case "openai":
-            return await callOpenAI(systemPrompt, history);
+            responseText = await callOpenAI(systemPrompt, history);
+            break;
         case "openrouter":
-            return await callOpenRouter(systemPrompt, history);
+            responseText = await callOpenRouter(systemPrompt, history);
+            break;
         default:
             throw new Error(`Unsupported AI provider: ${provider}`);
     }
+
+    // Store in Cache
+    aiCache.set(cacheKey, {
+        response: responseText,
+        timestamp: Date.now()
+    });
+
+    return responseText;
 }
 
 /**
@@ -157,7 +191,16 @@ function parseAIResponse(responseText) {
     }
 }
 
+/**
+ * Clear the AI response cache
+ */
+function clearCache() {
+    aiCache.clear();
+    return true;
+}
+
 module.exports = {
     callAI,
-    parseAIResponse
+    parseAIResponse,
+    clearCache
 };
