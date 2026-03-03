@@ -1,6 +1,10 @@
+/**
+ * Create a task in ClickUp
+ * @param {string} name - Task name/title
+ * @param {string|null} assigneeId - Optional assignee ID
+ * @returns {Promise<object>} ClickUp task object with ID
+ */
 async function createClickUpTask(name, assigneeId) {
-    console.log("✅ Creating ClickUp task:", name);
-
     const listId = "901816397206";
 
     try {
@@ -22,15 +26,13 @@ async function createClickUpTask(name, assigneeId) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("❌ ClickUp API error:", errorText);
             throw new Error(`ClickUp API returned ${response.status}: ${errorText}`);
         }
 
         const task = await response.json();
-        console.log("✅ ClickUp task created:", task.id);
         return task;
     } catch (error) {
-        console.error("💥 Error creating ClickUp task:", error.message);
+        console.error("ClickUp task creation failed:", error.message);
         throw error;
     }
 }

@@ -1,6 +1,10 @@
+/**
+ * Create a GitHub issue in the repository
+ * @param {string} title - Issue title
+ * @param {string} body - Issue description
+ * @returns {Promise<object>} GitHub issue object with URL
+ */
 async function createGithubIssue(title, body) {
-    console.log("🐙 Creating GitHub issue:", title);
-
     try {
         const response = await fetch(
             `https://api.github.com/repos/thihas0ehtet/thiha-ai-bot/issues`,
@@ -17,15 +21,13 @@ async function createGithubIssue(title, body) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("❌ GitHub API error:", errorText);
             throw new Error(`GitHub API returned ${response.status}: ${errorText}`);
         }
 
         const issue = await response.json();
-        console.log("✅ GitHub issue created:", issue.html_url);
         return issue;
     } catch (error) {
-        console.error("💥 Error creating GitHub issue:", error.message);
+        console.error("GitHub issue creation failed:", error.message);
         throw error;
     }
 }

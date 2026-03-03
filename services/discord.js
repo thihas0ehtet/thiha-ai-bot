@@ -1,6 +1,9 @@
+/**
+ * Send message notification to Discord webhook
+ * @param {string} message - Message content to send
+ * @returns {Promise<void>}
+ */
 async function notifyDiscord(message) {
-    console.log("🎵 Sending Discord notification:", message);
-
     try {
         const response = await fetch(process.env.DISCORD_WEBHOOK_URL, {
             method: 'POST',
@@ -12,13 +15,10 @@ async function notifyDiscord(message) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("❌ Discord webhook error:", errorText);
             throw new Error(`Discord returned ${response.status}: ${errorText}`);
         }
-
-        console.log("✅ Discord notification sent");
     } catch (error) {
-        console.error("💥 Error sending Discord notification:", error.message);
+        console.error("Discord notification failed:", error.message);
         throw error;
     }
 }
