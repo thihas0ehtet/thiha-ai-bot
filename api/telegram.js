@@ -1,5 +1,5 @@
 const { Telegraf } = require("telegraf");
-const { handleCommand, setModel, getModel } = require("../services/ai.js");
+const { handleCommand, setModel, getModel, clearMemory } = require("../services/ai.js");
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
@@ -36,6 +36,13 @@ bot.command('model', async (ctx) => {
     }
 });
 
+// Handle /clear command
+bot.command('clear', async (ctx) => {
+    if (!isAuthorized(ctx.from.id)) return;
+    clearMemory(ctx.from.id);
+    ctx.reply("🧹 Conversation history cleared!");
+});
+
 // Handle all text messages
 bot.on('text', async (ctx) => {
     // Skip if it's a command
@@ -49,7 +56,7 @@ bot.on('text', async (ctx) => {
     const command = ctx.message.text;
 
     try {
-        const result = await handleCommand(command);
+        const result = await handleCommand(ctx.from.id, command);
         ctx.reply(result);
     } catch (err) {
         console.error("Error processing message:", err.message);

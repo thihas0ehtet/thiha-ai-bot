@@ -4,9 +4,9 @@
  */
 
 /**
- * Call Gemini API
+ * Call Gemini API with history
  */
-async function callGemini(systemPrompt, userMessage) {
+async function callGemini(systemPrompt, history) {
     const apiKey = process.env.GEMINI_API_KEY;
     const baseUrl = process.env.GEMINI_API_URL;
 
@@ -15,12 +15,18 @@ async function callGemini(systemPrompt, userMessage) {
 
     const url = `${baseUrl}:generateContent?key=${apiKey}`;
 
+    // Map history to Gemini format (user/model)
+    const contents = history.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+    }));
+
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             system_instruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ parts: [{ text: userMessage }] }]
+            contents: contents
         })
     });
 
@@ -38,9 +44,9 @@ async function callGemini(systemPrompt, userMessage) {
 }
 
 /**
- * Call OpenAI API
+ * Call OpenAI API with history
  */
-async function callOpenAI(systemPrompt, userMessage) {
+async function callOpenAI(systemPrompt, history) {
     const apiKey = process.env.OPENAI_API_KEY;
     const model = process.env.OPENAI_MODEL || "gpt-3.5-turbo";
 
@@ -58,7 +64,7 @@ async function callOpenAI(systemPrompt, userMessage) {
             model: model,
             messages: [
                 { role: "system", content: systemPrompt },
-                { role: "user", content: userMessage }
+                ...history
             ],
             temperature: 0
         })
@@ -78,9 +84,9 @@ async function callOpenAI(systemPrompt, userMessage) {
 }
 
 /**
- * Call OpenRouter API
+ * Call OpenRouter API with history
  */
-async function callOpenRouter(systemPrompt, userMessage) {
+async function callOpenRouter(systemPrompt, history) {
     const apiKey = process.env.OPENROUTER_API_KEY;
     const model = process.env.OPENROUTER_MODEL || "openrouter/free";
 
@@ -98,7 +104,7 @@ async function callOpenRouter(systemPrompt, userMessage) {
             model: model,
             messages: [
                 { role: "system", content: systemPrompt },
-                { role: "user", content: userMessage }
+                ...history
             ]
         })
     });
@@ -119,16 +125,16 @@ async function callOpenRouter(systemPrompt, userMessage) {
 /**
  * Router for AI providers
  */
-async function callAI(provider, systemPrompt, userMessage) {
+async function callAI(provider, systemPrompt, history) {
     const normalizedProvider = (provider || "gemini").toLowerCase();
 
     switch (normalizedProvider) {
         case "gemini":
-            return await callGemini(systemPrompt, userMessage);
+            return await callGemini(systemPrompt, history);
         case "openai":
-            return await callOpenAI(systemPrompt, userMessage);
+            return await callOpenAI(systemPrompt, history);
         case "openrouter":
-            return await callOpenRouter(systemPrompt, userMessage);
+            return await callOpenRouter(systemPrompt, history);
         default:
             throw new Error(`Unsupported AI provider: ${provider}`);
     }
@@ -147,8 +153,6 @@ function parseAIResponse(responseText) {
         }
         return JSON.parse(jsonStr);
     } catch (e) {
-        // If not valid JSON, return null or throw depending on needs
-        // In our case, we'll return null to signal it's a plain message
         return null;
     }
 }

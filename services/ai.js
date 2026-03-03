@@ -6,6 +6,9 @@ const { SYSTEM_PROMPT } = require("./constants.js");
 // Current active model (default from env or gemini)
 let activeModel = process.env.AI_MODEL || "gemini";
 
+// In-memory storage for conversation history per user
+const userMemory = {};
+
 function setModel(model) {
     activeModel = model || "gemini";
     return activeModel;
@@ -13,6 +16,17 @@ function setModel(model) {
 
 function getModel() {
     return activeModel;
+}
+
+/**
+ * Clear conversation history for a specific user
+ */
+function clearMemory(userId) {
+    if (userMemory[userId]) {
+        delete userMemory[userId];
+        return true;
+    }
+    return false;
 }
 
 // Format date for display
@@ -24,9 +38,25 @@ function formatDate(isoStr) {
 }
 
 // Process user commands using identified AI provider to identify action types
-async function handleCommand(command) {
+async function handleCommand(userId, command) {
     try {
-        const responseText = await callAI(activeModel, SYSTEM_PROMPT, command);
+        // Initialize history for user if not exists
+        if (!userMemory[userId]) {
+            userMemory[userId] = [];
+        }
+
+        // Add user message to history
+        userMemory[userId].push({ role: "user", content: command });
+
+        // Keep history manageable (last 10 messages)
+        if (userMemory[userId].length > 10) {
+            userMemory[userId] = userMemory[userId].slice(-10);
+        }
+
+        const responseText = await callAI(activeModel, SYSTEM_PROMPT, userMemory[userId]);
+
+        // Add AI response to history
+        userMemory[userId].push({ role: "assistant", content: responseText });
 
         // Parse structured action from AI response
         const action = parseAIResponse(responseText);
@@ -210,4 +240,4 @@ async function handleClickUpAction(action) {
 
 
 
-module.exports = { handleCommand, setModel, getModel };
+module.exports = { handleCommand, setModel, getModel, clearMemory };
