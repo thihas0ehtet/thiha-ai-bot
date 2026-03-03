@@ -168,7 +168,8 @@ async function handleClickUpAction(action) {
 // Process user commands using Gemini AI to identify action types
 async function handleCommand(command) {
     const apiKey = process.env.GEMINI_API_KEY;
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const baseUrl = process.env.GEMINI_API_URL;
+    const url = `${baseUrl}:generateContent?key=${apiKey}`;
 
     try {
         const systemPrompt = `You are an AI assistant that helps manage GitHub and ClickUp projects, and send Discord notifications.
