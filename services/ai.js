@@ -1,5 +1,19 @@
 const { handleGithubIssue, handleCreateRepo } = require("./github.js");
 const clickup = require("./clickup.js");
+const { callAI, parseAIResponse } = require("./models.js");
+const { SYSTEM_PROMPT } = require("./constants.js");
+
+// Current active model (default from env or gemini)
+let activeModel = process.env.AI_MODEL || "gemini";
+
+function setModel(model) {
+    activeModel = model || "gemini";
+    return activeModel;
+}
+
+function getModel() {
+    return activeModel;
+}
 
 // Format date for display
 function formatDate(isoStr) {
@@ -7,6 +21,35 @@ function formatDate(isoStr) {
     return new Date(isoStr).toLocaleDateString('en-US', {
         year: 'numeric', month: 'short', day: 'numeric'
     });
+}
+
+// Process user commands using identified AI provider to identify action types
+async function handleCommand(command) {
+    try {
+        const responseText = await callAI(activeModel, SYSTEM_PROMPT, command);
+
+        // Parse structured action from AI response
+        const action = parseAIResponse(responseText);
+
+        if (!action) {
+            return responseText;
+        }
+
+        // Route to the correct handler
+        if (action.type === "github_issue") {
+            return await handleGithubIssue(action);
+        } else if (action.type === "github_repo") {
+            return await handleCreateRepo(action);
+        } else if (action.type?.startsWith("clickup_")) {
+            return await handleClickUpAction(action);
+        } else if (action.type === "message") {
+            return action.text || responseText;
+        }
+
+        return responseText;
+    } catch (error) {
+        throw error;
+    }
 }
 
 // Handle all ClickUp actions dispatched by AI
@@ -165,121 +208,6 @@ async function handleClickUpAction(action) {
     }
 }
 
-// Process user commands using Gemini AI to identify action types
-async function handleCommand(command) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    const baseUrl = process.env.GEMINI_API_URL;
-    const url = `${baseUrl}:generateContent?key=${apiKey}`;
 
-    try {
-        const systemPrompt = `You are an AI assistant that helps manage GitHub and ClickUp projects, and send Discord notifications.
 
-IMPORTANT: Always respond with ONLY valid JSON, nothing else. No markdown, no explanation.
-
-=== GITHUB ACTIONS ===
-
-Create GitHub issue:
-{ "type": "github_issue", "title": "issue title", "body": "issue description" }
-
-Create GitHub repository:
-{ "type": "github_repo", "name": "repo name", "description": "repo description", "private": false }
-
-=== CLICKUP ACTIONS ===
-
-The user will refer to projects by SPACE NAME and FOLDER/PROJECT NAME. Sprints are LISTS within folders.
-
-Create a task in a specific sprint/list:
-{ "type": "clickup_create_task", "space_name": "MySpace", "folder_name": "MyProject", "list_name": "Sprint 1", "task_name": "task title", "description": "optional description", "priority": null }
-
-Get current sprint info:
-{ "type": "clickup_current_sprint", "space_name": "MySpace", "folder_name": "MyProject" }
-
-Get remaining tasks in current sprint:
-{ "type": "clickup_remaining_tasks", "space_name": "MySpace", "folder_name": "MyProject", "list_name": null }
-
-Get sprint deadline:
-{ "type": "clickup_sprint_deadline", "space_name": "MySpace", "folder_name": "MyProject" }
-
-Get next sprint:
-{ "type": "clickup_next_sprint", "space_name": "MySpace", "folder_name": "MyProject" }
-
-Get full project info:
-{ "type": "clickup_project_info", "space_name": "MySpace", "folder_name": "MyProject" }
-
-See who is assigned to tasks:
-{ "type": "clickup_task_assignees", "space_name": "MySpace", "folder_name": "MyProject" }
-
-List all projects in a space:
-{ "type": "clickup_list_projects", "space_name": "MySpace" }
-
-Update a task (need task_id):
-{ "type": "clickup_update_task", "task_id": "taskid", "status": "complete", "task_name": null, "priority": null }
-
-Delete a task (need task_id):
-{ "type": "clickup_delete_task", "task_id": "taskid" }
-
-=== REGULAR MESSAGE ===
-
-For regular conversation or questions:
-{ "type": "message", "text": "your response here" }
-
-RULES:
-- Extract space_name, folder_name, list_name from user's message
-- If user says "project X" it refers to folder_name
-- If user says "sprint 1" or "list name" it refers to list_name
-- If user says "in space X" it refers to space_name
-- Always respond with ONLY valid JSON`;
-
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                system_instruction: { parts: [{ text: systemPrompt }] },
-                contents: [{ parts: [{ text: command }] }]
-            })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`API returned ${response.status}: ${errorText}`);
-        }
-
-        const aiResponse = await response.json();
-
-        if (!aiResponse.candidates?.[0]?.content) {
-            return "Unable to process request";
-        }
-
-        const responseText = aiResponse.candidates[0].content.parts[0].text;
-
-        // Parse structured action from AI response
-        let action = {};
-        try {
-            let jsonStr = responseText;
-            const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
-            if (jsonMatch) {
-                jsonStr = jsonMatch[1].trim();
-            }
-            action = JSON.parse(jsonStr);
-        } catch (e) {
-            return responseText;
-        }
-
-        // Route to the correct handler
-        if (action.type === "github_issue") {
-            return await handleGithubIssue(action);
-        } else if (action.type === "github_repo") {
-            return await handleCreateRepo(action);
-        } else if (action.type?.startsWith("clickup_")) {
-            return await handleClickUpAction(action);
-        } else if (action.type === "message") {
-            return action.text || responseText;
-        }
-
-        return responseText;
-    } catch (error) {
-        throw error;
-    }
-}
-
-module.exports = { handleCommand };
+module.exports = { handleCommand, setModel, getModel };
