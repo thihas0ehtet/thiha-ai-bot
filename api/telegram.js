@@ -3,10 +3,25 @@ const { handleCommand } = require("../services/ai.js");
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
-bot.start((ctx) => ctx.reply("✨ AI Assistant Ready! Just send me a message."));
+// Parse authorized user IDs from environment variable (comma-separated)
+const AUTHORIZED_USER_IDS = (process.env.AUTHORIZED_USER_IDS || "").split(",").map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+
+const isAuthorized = (userId) => AUTHORIZED_USER_IDS.includes(userId);
+
+bot.start((ctx) => {
+    if (!isAuthorized(ctx.from.id)) {
+        return ctx.reply("❌ You don't have access to this bot.");
+    }
+    ctx.reply("✨ AI Assistant Ready! Just send me a message.");
+});
 
 // Handle all text messages
 bot.on('text', async (ctx) => {
+    // Check authorization
+    if (!isAuthorized(ctx.from.id)) {
+        return ctx.reply("❌ You don't have access to this bot.");
+    }
+
     const command = ctx.message.text;
 
     try {
