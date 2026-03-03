@@ -30,17 +30,25 @@ export async function handleCommand(command) {
         const aiResponse = await response.json();
         console.log("✅ AI Response received:", JSON.stringify(aiResponse).slice(0, 200) + "...");
 
-        const action = aiResponse.data.action; // assuming AI returns structured action
+        // Extract text from Gemini API response
+        if (aiResponse.candidates && aiResponse.candidates[0] && aiResponse.candidates[0].content) {
+            const text = aiResponse.candidates[0].content.parts[0].text;
+            console.log("📄 Extracted text:", text);
+            return text;
+        }
 
-        // Example: GitHub issue
-        // if (action.type === "github_issue") {
-        //     const issue = await createGithubIssue(action.title, action.body);
-        //     await createClickUpTask(action.title, action.assignee);
-        //     await notifyDiscord(`New Task Assigned: ${action.title}`);
-        //     return `✅ Task created and synced: ${issue.html_url}`;
-        // }
+        // Fallback for structured actions (if API returns them differently)
+        const action = aiResponse.action;
+        if (action && action.type === "github_issue") {
+            // Example: GitHub issue
+            // const issue = await createGithubIssue(action.title, action.body);
+            // await createClickUpTask(action.title, action.assignee);
+            // await notifyDiscord(`New Task Assigned: ${action.title}`);
+            // return `✅ Task created and synced: ${issue.html_url}`;
+        }
 
-        return aiResponse.data.text; // fallback plain text
+        console.warn("⚠️ Unexpected response structure:", aiResponse);
+        return "Unable to parse AI response";
     } catch (error) {
         console.error("💥 Error in handleCommand:", error.message);
         console.error("📍 Stack trace:", error.stack);
