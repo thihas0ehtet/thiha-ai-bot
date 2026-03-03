@@ -32,4 +32,44 @@ async function createGithubIssue(title, body) {
     }
 }
 
-module.exports = { createGithubIssue };
+/**
+ * Create a new GitHub repository
+ * @param {string} name - Repository name
+ * @param {string} description - Repository description
+ * @param {boolean} isPrivate - Is repository private (default: false)
+ * @returns {Promise<object>} GitHub repository object with URL
+ */
+async function createRepository(name, description, isPrivate = false) {
+    try {
+        const response = await fetch(
+            `https://api.github.com/user/repos`,
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name,
+                    description,
+                    private: isPrivate,
+                    auto_init: true
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`GitHub API returned ${response.status}: ${errorText}`);
+        }
+
+        const repo = await response.json();
+        return repo;
+    } catch (error) {
+        console.error("GitHub repository creation failed:", error.message);
+        throw error;
+    }
+}
+
+module.exports = { createGithubIssue, createRepository };

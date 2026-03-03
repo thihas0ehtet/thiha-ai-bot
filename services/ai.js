@@ -1,10 +1,10 @@
-const { createGithubIssue } = require("./github.js");
+const { createGithubIssue, createRepository } = require("./github.js");
 const { createClickUpTask } = require("./clickup.js");
 const { notifyDiscord } = require("./discord.js");
 
 /**
  * Process user commands using Gemini AI to identify action types
- * Supports: GitHub issues, regular messages
+ * Supports: GitHub issues, GitHub repos, regular messages
  * @param {string} command - User command text
  * @returns {Promise<string>} Response or result of action
  */
@@ -15,13 +15,21 @@ async function handleCommand(command) {
     try {
         // Send command to Gemini with system prompt to identify action type
 
-        const systemPrompt = `You are an AI assistant that helps create GitHub issues, ClickUp tasks, and Discord notifications.
-When the user wants to create a GitHub issue, respond with ONLY a valid JSON object (no markdown, no extra text):
+        const systemPrompt = `You are an AI assistant that helps create GitHub issues, GitHub repositories, ClickUp tasks, and Discord notifications.
+
+When the user wants to create a GitHub issue, respond with ONLY a valid JSON object:
 {
   "type": "github_issue",
   "title": "issue title",
-  "body": "issue description",
-  "action": "created"
+  "body": "issue description"
+}
+
+When the user wants to create a GitHub repository, respond with ONLY a valid JSON object:
+{
+  "type": "github_repo",
+  "name": "repository name",
+  "description": "repository description",
+  "private": false
 }
 
 When the user sends a regular message, respond with JSON:
@@ -78,6 +86,8 @@ IMPORTANT: Always respond with ONLY valid JSON, nothing else.`;
         // Handle different action types
         if (action.type === "github_issue") {
             return await handleGithubIssue(action);
+        } else if (action.type === "github_repo") {
+            return await handleCreateRepo(action);
         } else if (action.type === "message") {
             return action.text || responseText;
         }
@@ -114,7 +124,30 @@ async function handleGithubIssue(action) {
         const discordMessage = `🚀 New GitHub Issue Created!\n📌 **${title}**\n🔗 ${issueUrl}\n✅ Task added to ClickUp`;
         await notifyDiscord(discordMessage);
 
-        return `✅ Success! Created GitHub issue and synced with ClickUp and Discord:\n${issueUrl}`;
+/**
+ * Handle GitHub repository creation workflow
+ * Creates repo and notifies Discord
+ * @param {object} action - Action object with name, description, and private flag
+ * @returns {Promise<string>} Success message or error
+ */
+async function handleCreateRepo(action) {
+    try {
+        const { name, description, private: isPrivate } = action;
+
+        if (!name) {
+            return "❌ Repository name is required";
+        }
+
+        // Create GitHub repository
+        const repo = await createRepository(name, description || "", isPrivate || false);
+        const repoUrl = repo.html_url;
+
+        // Notify Discord channel about new repository
+        const repoType = isPrivate ? "Private" : "Public";
+        const discordMessage = `🎉 New ${repoType} Repository Created!\n📦 **${name}**\n🔗 ${repoUrl}\n📝 ${description || "No description"}`;
+        await notifyDiscord(discordMessage);
+
+        return `✅ Success! Created ${repoType.toLowerCase()} repository:\n${repoUrl}`;
     } catch (error) {
         return `❌ Error: ${error.message}`;
     }
