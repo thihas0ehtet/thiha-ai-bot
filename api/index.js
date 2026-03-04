@@ -103,20 +103,20 @@ module.exports = (req, res) => {
             </div>
 
             <div class="section">
-                <h2>Deep Instructions</h2>
-                <div class="card" style="width: 100%;">
-                    <h3>How to interact with Thiha Assistant</h3>
-                    <ul>
-                        <li><strong>Identity & Model:</strong> Ask <code>"who are you?"</code> or <code>"what model are you using?"</code> to see personalized identity responses.</li>
-                        <li><strong>ClickUp Management:</strong> Use natural language like <code>"what's the current sprint in Project MyanOne?"</code> or <code>"remaining tasks in Space X"</code>.</li>
-                        <li><strong>GitHub Automation:</strong> Say <code>"Create a repo named MyProject"</code> or <code>"Create issue fix login bug"</code>.</li>
-                        <li><strong>Long-Term Memory:</strong> Tell the AI <code>"I'm an expert in NestJS"</code> or <code>"My product is MyanOne"</code>. It will save this to Firebase and remember it tomorrow!</li>
-                        <li><strong>Utility Commands:</strong>
-                            <br><code>/clear</code> — Wipe short-term session memory.
-                            <br><code>/clearcache</code> — Reset AI response cache.
-                            <br><code>/model [name]</code> — Switch AI providers.
-                        </li>
-                    </ul>
+                <h2>Quick Guide</h2>
+                <div class="grid">
+                    <div class="card">
+                        <h3>💬 Simply Ask</h3>
+                        <p>Ask <code>"who are you"</code> or <code>"now ai model"</code> for instant identity and status checks.</p>
+                    </div>
+                    <div class="card">
+                        <h3>🛠️ Manage Work</h3>
+                        <p>Chat naturally: <code>"what's the current sprint?"</code> or <code>"create a task for MyanOne"</code>.</p>
+                    </div>
+                    <div class="card">
+                        <h3>⚙️ Commands</h3>
+                        <p>Use <code>/model</code> to switch, <code>/clear</code> to reset memory, or <code>/clearcache</code> to refresh.</p>
+                    </div>
                 </div>
             </div>
 
