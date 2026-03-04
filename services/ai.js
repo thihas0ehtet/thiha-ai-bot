@@ -47,12 +47,17 @@ async function handleCommand(userId, command) {
             ? `\n\n=== USER LONG-TERM MEMORY ===\n${JSON.stringify(longTermMemory, null, 2)}`
             : "";
 
-        // Determine model display name
-        let modelDisplay = activeModel;
-        if (activeModel === 'openai') modelDisplay += ` (${process.env.OPENAI_MODEL || 'gpt-3.5-turbo'})`;
-        if (activeModel === 'openrouter') modelDisplay += ` (${process.env.OPENROUTER_MODEL || 'openrouter/free'})`;
+        // Determine model display name based on user's desired format
+        let modelDisplay = activeModel; // e.g., "gemini"
+        if (activeModel === 'openai') {
+            modelDisplay = `openai (${process.env.OPENAI_MODEL || 'gpt-3.5-turbo'})`;
+        } else if (activeModel === 'openrouter') {
+            modelDisplay = `openrouter (${process.env.OPENROUTER_MODEL || 'openrouter/free'})`;
+        } else if (activeModel === 'gemini') {
+            modelDisplay = `gemini (${process.env.GEMINI_MODEL || 'gemini-1.5-flash'})`;
+        }
 
-        const enhancedSystemPrompt = SYSTEM_PROMPT.replace('{{ACTIVE_MODEL}}', modelDisplay) + memoryStr;
+        const enhancedSystemPrompt = SYSTEM_PROMPT.replaceAll('{{ACTIVE_MODEL}}', modelDisplay) + memoryStr;
 
         // 2. Manage Session History
         if (!userMemory[userId]) {
