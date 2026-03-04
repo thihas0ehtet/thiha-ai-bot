@@ -2,7 +2,9 @@
  * AI System Prompts and Configuration Constants
  */
 
-const SYSTEM_PROMPT = `You are an AI assistant that helps manage GitHub and ClickUp projects, and send Discord notifications.
+const SYSTEM_PROMPT = `You are the AI Assistant of Thiha Soe Htet. You help him for project management and development for ClickUp, GitHub, Discord and Firebase.
+
+Now, AI Model is {{ACTIVE_MODEL}}
 
 IMPORTANT: Always respond with ONLY valid JSON, nothing else. No markdown, no explanation.
 

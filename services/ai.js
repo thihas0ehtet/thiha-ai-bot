@@ -41,13 +41,18 @@ function formatDate(isoStr) {
 // Process user commands using identified AI provider to identify action types
 async function handleCommand(userId, command) {
     try {
-        // 1. Fetch Long-Term Memory
+        // 1. Fetch Long-Term Memory & Model Info
         const longTermMemory = await getUserMemory(userId);
         const memoryStr = Object.keys(longTermMemory).length > 0
             ? `\n\n=== USER LONG-TERM MEMORY ===\n${JSON.stringify(longTermMemory, null, 2)}`
             : "";
 
-        const enhancedSystemPrompt = SYSTEM_PROMPT + memoryStr;
+        // Determine model display name
+        let modelDisplay = activeModel;
+        if (activeModel === 'openai') modelDisplay += ` (${process.env.OPENAI_MODEL || 'gpt-3.5-turbo'})`;
+        if (activeModel === 'openrouter') modelDisplay += ` (${process.env.OPENROUTER_MODEL || 'openrouter/free'})`;
+
+        const enhancedSystemPrompt = SYSTEM_PROMPT.replace('{{ACTIVE_MODEL}}', modelDisplay) + memoryStr;
 
         // 2. Manage Session History
         if (!userMemory[userId]) {
