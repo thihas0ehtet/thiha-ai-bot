@@ -1,4 +1,7 @@
-const { handleGithubIssue, handleCreateRepo } = require("./github.js");
+const { handleGithubIssue, handleCreateRepo, getRepository, createRepository, pushFile } = require("./github.js");
+const { createDeployment } = require("./vercel.js");
+const { notifyDiscord } = require("./discord.js");
+
 const clickup = require("./clickup.js");
 const { callAI, parseAIResponse, clearCache } = require("./models.js");
 const { SYSTEM_PROMPT } = require("./constants.js");
@@ -100,7 +103,10 @@ async function handleCommand(userId, command) {
             return await handleGithubIssue(action);
         } else if (action.type === "github_repo") {
             return await handleCreateRepo(action);
+        } else if (action.type === "github_vercel_deploy") {
+            return await handleGithubVercelWorkflow(action);
         } else if (action.type?.startsWith("clickup_")) {
+
             return await handleClickUpAction(action);
         } else if (action.type === "message") {
             return action.text || responseText;
@@ -267,4 +273,49 @@ async function handleClickUpAction(action) {
         return `❌ ClickUp Error: ${error.message}`;
     }
 }
+
+// Coordinate the full GitHub + Vercel workflow
+async function handleGithubVercelWorkflow(action) {
+    try {
+        const { repo_name, files } = action;
+
+        if (!repo_name || !files || !files.length) {
+            return "❌ Repository name and files (HTML/CSS/JS) are required for the workflow.";
+        }
+
+        let output = "";
+
+        // 1. GitHub Step: Check if repo exists, create if not
+        let repo = await getRepository(repo_name);
+        if (!repo) {
+            output += `📦 Creating GitHub repository: ${repo_name}...\n`;
+            repo = await createRepository(repo_name, "Generated UI by AI Bot");
+        } else {
+            output += `📦 Repository ${repo_name} already exists.\n`;
+        }
+
+        // 2. GitHub Step: Push all files
+        output += `📤 Pushing ${files.length} files to GitHub...\n`;
+        for (const fileObj of files) {
+            await pushFile(repo_name, fileObj.file, fileObj.contents, "Updated UI via AI Assistant");
+        }
+        output += `✅ GitHub Push completed: ${repo.html_url}\n`;
+
+        // 3. Vercel Step: Deploy files
+        output += `🚀 Deploying to Vercel...\n`;
+        const deployment = await createDeployment(repo_name, files);
+        const vercelUrl = `https://${deployment.url}`;
+        output += `✅ Vercel Deployment successful!\n🔗 URL: ${vercelUrl}\n`;
+
+        // 4. Notify Discord
+        const discordMessage = `🛠️ **AI Bot Workflow Completed!**\n📦 Repo: ${repo.html_url}\n🎨 Project: ${repo_name}\n🌐 Live: ${vercelUrl}`;
+        await notifyDiscord(discordMessage);
+
+        return `✨ **Workflow Success!** ✨\n\n${output}`;
+    } catch (error) {
+        return `❌ Workflow Error: ${error.message}`;
+    }
+}
+
 module.exports = { handleCommand, setModel, getModel, clearMemory, clearCache };
+

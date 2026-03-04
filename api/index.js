@@ -99,6 +99,11 @@ module.exports = (req, res) => {
                         <h3>⚡ High Performance</h3>
                         <p>Includes an <b>MD5-based AI Caching</b> system to minimize API costs and provide lightning-fast responses for repeated queries.</p>
                     </div>
+                    <div class="card">
+                        <h3>🚀 Auto Deployment</h3>
+                        <p>Generate UI apps from a single prompt. Auto-pushes to <b>GitHub</b> and deploys instantly to <b>Vercel</b> with a live URL.</p>
+                    </div>
+
                 </div>
             </div>
 

@@ -27,8 +27,84 @@ async function createGithubIssue(title, body) {
     }
 }
 
+// Get a GitHub repository
+async function getRepository(name) {
+    try {
+        // First try to get user's own repo
+        const response = await fetch(
+            `https://api.github.com/repos/thihas0ehtet/${name}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            }
+        );
+
+        if (response.status === 404) return null;
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`GitHub API returned ${response.status}: ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("GitHub repository lookup failed:", error.message);
+        throw error;
+    }
+}
+
+// Push a file to a GitHub repository
+async function pushFile(repoName, path, content, message = "Update file from AI Bot") {
+    try {
+        const owner = "thihas0ehtet"; // Default owner based on current context
+        const url = `https://api.github.com/repos/${owner}/${repoName}/contents/${path}`;
+
+        // 1. Check if file exists to get its SHA
+        let sha = null;
+        const getResponse = await fetch(url, {
+            headers: {
+                'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (getResponse.ok) {
+            const fileData = await getResponse.json();
+            sha = fileData.sha;
+        }
+
+        // 2. Create or Update file
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message,
+                content: Buffer.from(content).toString('base64'),
+                sha: sha || undefined
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`GitHub API returned ${response.status}: ${errorText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("GitHub file push failed:", error.message);
+        throw error;
+    }
+}
+
 // Create a new GitHub repository
 async function createRepository(name, description, isPrivate = false) {
+
     try {
         const response = await fetch(
             `https://api.github.com/user/repos`,
@@ -117,4 +193,11 @@ async function handleCreateRepo(action) {
     }
 }
 
-module.exports = { createGithubIssue, createRepository, handleGithubIssue, handleCreateRepo };
+module.exports = {
+    createGithubIssue,
+    createRepository,
+    getRepository,
+    pushFile,
+    handleGithubIssue,
+    handleCreateRepo
+};

@@ -18,6 +18,10 @@ Create GitHub issue:
 Create GitHub repository:
 { "type": "github_repo", "name": "repo name", "description": "repo description", "private": false }
 
+Create UI, Push to GitHub and Deploy to Vercel:
+{ "type": "github_vercel_deploy", "repo_name": "repo-name", "files": [ { "file": "index.html", "contents": "code..." }, { "file": "style.css", "contents": "code..." } ] }
+
+
 === CLICKUP ACTIONS ===
 
 The user will refer to projects by SPACE NAME and FOLDER/PROJECT NAME. Sprints are LISTS within folders.
@@ -58,7 +62,15 @@ Update user's long-term memory (skills, projects, etc.):
 { "type": "update_memory", "key": "skills", "value": ["Flutter", "Firebase", "NestJS"] }
 { "type": "update_memory", "key": "projects", "value": ["MyanOne", "AI Bot"] }
 
+=== UI DESIGN RULES ===
+- When asked to generate UI, use modern, rich aesthetics (glassmorphism, vibrant colors, gradients).
+- Use Google Fonts (Inter, Roboto, etc.).
+- Ensure responsive design.
+- Include interactive elements and hover effects.
+- For blog apps, include a hero section, list of posts, and a clean minimalist reading view.
+
 === REGULAR MESSAGE ===
+
 
 For regular conversation or questions:
 { "type": "message", "text": "your response here" }
