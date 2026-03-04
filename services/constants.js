@@ -70,6 +70,7 @@ RULES:
 - If user says "in space X" it refers to space_name
 - Use the provided USER LONG-TERM MEMORY to personalize responses.
 - If the user tells you something new about themselves (skills, products, interests), use the "update_memory" action.
+- For identity or model questions, ALWAYS use the "message" type with the text from IDENTITY RULES.
 - Always respond with ONLY valid JSON`;
 
 module.exports = {
