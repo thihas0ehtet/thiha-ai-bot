@@ -62,9 +62,17 @@ bot.on('text', async (ctx) => {
 
     const command = ctx.message.text;
 
+    // Send typing indicator to user
+    try {
+        await ctx.sendChatAction("typing");
+    } catch (e) {
+        console.error("Failed to send typing action:", e.message);
+    }
+
     try {
         const result = await handleCommand(ctx.from.id, command);
         ctx.reply(result);
+
     } catch (err) {
         console.error("Error processing message:", err.message);
         ctx.reply("❌ Error: " + err.message);
